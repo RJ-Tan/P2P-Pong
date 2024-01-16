@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>P2P Pong</title>
+    <link rel="stylesheet" href="/main.css">
+  </head>
+  <body>
+    <h1>Pong</h1>
+    <canvas id="canvas"></canvas>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      fetch('/data.json')
+    .then((response) => {return response.json()})
+    .then((json) => console.log(json));
+    </script>
+    <script src="/game.js"></script>
+    <script src="/datachannel.js"></script>
+
+  </body>
+</html>
