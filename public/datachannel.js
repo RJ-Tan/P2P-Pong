@@ -11,7 +11,7 @@ b.appendChild(btn);
 
 //--------------------------------
 
-const config = {
+const config = {    //config for the RTC connection
     iceServers: [
         {
             'urls': 'stun:stun.l.google.com:19302',
@@ -27,11 +27,13 @@ let dataChannelOptions = {
     maxPacketLifeTime: 1000,
 };
 
+let player;
 //----------------------
 
 btn.onclick = async() =>{
     socket.emit('ready');
     rtcPeerConn = new RTCPeerConnection(config);
+    console.log(rtcPeerConn)
     rtcPeerConn.addEventListener('connectionstatechange', (event) => {
         if (rtcPeerConn.connectionState === 'connected') {
             console.log("Connected");
@@ -45,16 +47,7 @@ btn.onclick = async() =>{
 }
 
 socket.on('player_join', async (msg)=>{
-    /*
-    dataChannel = rtcPeerConn.createDataChannel('gameInputs', dataChannelOptions);
-
-    dataChannel.onopen = () => {
-        console.log(this.label);
-    }
-
-    rtcPeerConn.ondatachannel = () => {
-        console.log("data channel added")
-    }*/
+    player = "P1";
     dataChannel = rtcPeerConn.createDataChannel('gameInputs', dataChannelOptions);
     datachannelSetup(dataChannel);
     //creating the data channel on p1 side
@@ -65,7 +58,8 @@ socket.on('player_join', async (msg)=>{
 })
 
 socket.on('remote_offer', async (msg)=>{
-
+    player = "P2";
+    
     rtcPeerConn.addEventListener('datachannel', (event)=>{
         console.log("Beepboop",event)
         dataChannel = event.channel;
@@ -87,7 +81,7 @@ socket.on('remote_offer', async (msg)=>{
 })
 
 socket.on('remote_ans', async (msg)=>{
-    console.log(msg.ans.sdp)
+
     const remoteDesc = new RTCSessionDescription(msg.ans);
     await rtcPeerConn.setRemoteDescription(remoteDesc);
     rtcPeerConn.addEventListener('icecandidate', event => {
@@ -102,6 +96,7 @@ socket.on('remote_icecandidate', async (msg)=>{
     console.log(JSON.stringify(msg.candidate))
     if (msg.candidate) {
         try {
+            console.log("received the ice")
             await rtcPeerConn.addIceCandidate(msg.candidate);
         } catch (e) {
             console.log('Error adding received ice candidate', e);
@@ -115,9 +110,65 @@ function datachannelSetup(event){
     console.log(event);
     dataChannel.addEventListener('open', ()=>{console.log("opened")});
     dataChannel.addEventListener('message', messageHandler);
+
+    //setting up key event handlers only after datachannel setup
+    if (player == 'P1'){
+        canvas.addEventListener("keydown", keydownListener1);
+
+    }
+    else{
+        canvas.addEventListener("keydown", keydownListener2)
+
+    }
 }
 
 function messageHandler(message){
     let data = message.data;
+    console.log(JSON.stringify(data));
+    if (player == 'P1'){
+        pong.input(data);
+        dataChannel.send(JSON.stringify(pong.getState()));
+    }
+    else{
+        pong.setState(JSON.parse(data));
+    }
+
     console.log(data);
 }
+
+function keydownListener1(e){
+    if (e.code == 'KeyD'){
+        pong.input(player+"U");
+    }
+    else if (e.code == 'KeyA'){
+        pong.input(player+"D");
+    }
+    else if (e.code == 'Escape'){
+        console.log('hello')
+        document.activeElement.blur();
+        game.paused = true;
+        console.log(document.activeElement)
+    }
+    dataChannel.send(JSON.stringify(pong.getState()));
+}
+
+function keydownListener2(e){
+    if (e.code == 'KeyD'){
+        dataChannel.send(player+"U");
+    }
+    else if (e.code == 'KeyA'){
+        dataChannel.send(player+"D");
+    }
+    else if (e.code == 'Escape'){
+        console.log('hello')
+        document.activeElement.blur();
+        game.paused = true;
+        console.log(document.activeElement)
+    }
+}
+
+//Notes
+/**
+ * Current management of game state is in a centralized fashion.
+ * Player1 holds game state and sends it over to Player2 to update their game state.
+ */
