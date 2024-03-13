@@ -1,15 +1,20 @@
-const express = require('express');
-const {createServer} = require('node:http');
-const {join} = require('node:path');
-const {Server} = require('socket.io');
+import express from 'express';
+import { createServer } from 'node:http';
+import { join } from 'node:path';
+import { Server } from 'socket.io';
+import path from 'path';
+import { fileURLToPath } from 'node:url';
 
 const app = express();
 const server = createServer(app);
 const io = new Server(server)
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 console.log(__dirname)
 
 app.use(express.static(join(__dirname, 'public')));
+app.use(express.static(join(__dirname, 'dist')));
 
 app.get('/', (req, res)=> { //defines a route handler '/' that gets called for website home
     res.sendFile(join(__dirname, 'index.html'));
@@ -27,15 +32,9 @@ io.on('connection', (socket)=>{
     socket.on('disconnect', ()=>{
         console.log('user disconnected');
     });
-    /*
-    socket.on('chat message', (msg) => {
-        console.log('message: ' + msg);
-    });*/
 
     socket.on('ready', async ()=>{
         socket.join('game1');
-        //socket.to('game1').emit("okay"); //broadcasts to everyone but current
-        //console.log(socket.rooms.values().next().value);
         let sockets = await io.in('game1').fetchSockets()
         console.log(socket.rooms)
         if (sockets.length == 1){
