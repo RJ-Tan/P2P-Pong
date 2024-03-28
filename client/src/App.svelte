@@ -1,9 +1,11 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
   import Input from './lib/Input.svelte';
-  import Game from './lib/Game.svelte';
   import {state, uName, roomID} from './lib/stores.js';
-
+  import {Router, Link, Route, navigate} from 'svelte-routing';
+  import Game from './routes/Game.svelte';
+  import Home from './routes/Home.svelte';
+  
   let stateVal: Number;
   let p1_name: String;
   $: stateVal;
@@ -22,23 +24,30 @@
     unsub1
     //unsub2
   })
+
+  export let url ="";
+
+
+  function bonk(){
+    let arg1 = $uName;
+    let arg2 = $roomID;
+    navigate(`/about/${arg1}/${arg2}`);
+  
+  }
 </script>
+
+
 
 <main>
 
-  <h1>P2P Pong</h1>
+  <h1 id="title">P2P Pong</h1>
 
-  <div class="card">
-    {#if $state == 0}
-      <Input/>
-    
-    {:else if $state==1}
-      <Game p1_name={$uName} room_id={$roomID}/>
-    {/if}
-
-
-  </div>
-
+  <Router {url}>
+    <div>
+      <Route path="/about/:arg1/:arg2" let:params><Game p_name={params.arg1} rm_id={params.arg2}/></Route>
+      <Route path="/"><Home on:player_ready={bonk}/></Route>
+    </div>
+  </Router>
 
 </main>
 

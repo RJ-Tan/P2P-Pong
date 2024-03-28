@@ -1,15 +1,20 @@
 <script>
     import { onMount } from 'svelte';
-    import {uName, roomID, state} from './stores.js'
-
+    import {uName, roomID, state} from './stores.js';
+    import {createEventDispatcher} from 'svelte';
     
     let name = "";
     let id = "";
+    const dispatch = createEventDispatcher();
     function clickHandler(){
         uName.set(name);
         roomID.set(id);
         state.set(1);
+
+        dispatch('player_ready');
+        
     }
+
 </script>
 
 <div>
